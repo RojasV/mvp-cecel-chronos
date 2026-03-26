@@ -90,8 +90,8 @@ const slides = [
                 <div style={{ fontSize: 25, color: C.gold, fontFamily: fonts.serif, marginTop: 4, letterSpacing: 0.5 }}>Marcelo Miranda Soares Neto</div>
             </div>
             <div style={{ position: "absolute", bottom: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-                <HorizonLogo size={36} />
-                <div style={{ fontSize: 13, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1 }}>www.grupohorizon.co</div>
+                <HorizonLogo size={80} />
+                <div style={{ fontSize: 14, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1 }}>www.grupohorizon.co</div>
             </div>
         </div>
     ),
@@ -215,7 +215,7 @@ const slides = [
             <div style={{ flex: 1.2, minWidth: 0 }}>
                 <MockupFrame>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 30px" }}>
-                        <HorizonLogo size={48} />
+                        <HorizonLogo size={70} />
                         <div style={{ fontSize: 14, color: C.textMuted, letterSpacing: 2, marginBottom: 24, marginTop: 8, fontFamily: fonts.sans }}>GESTÃO DE RELÓGIOS</div>
                         <InputField label="E-MAIL" value="marcelo@sistema.com" icon="✉" />
                         <InputField label="SENHA" value="••••••••••" icon="🔒" />
@@ -425,7 +425,7 @@ const slides = [
             <div style={{ flex: 1.2, minWidth: 0 }}>
                 <MockupFrame title="VITRINE PÚBLICA">
                     <div style={{ textAlign: "center", marginBottom: 14 }}>
-                        <HorizonLogo size={36} />
+                        <HorizonLogo size={60} />
                         <div style={{ fontSize: 14, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1.5, marginTop: 6 }}>COLEÇÃO DE MARCELO MIRANDA</div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
@@ -686,8 +686,8 @@ const slides = [
             <div style={{ marginTop: 32, fontSize: 25, fontFamily: fonts.serif, color: C.goldLight, fontStyle: "italic" }}>Marcelo Miranda Soares Neto</div>
             <div style={{ fontSize: 16, color: C.goldDark, fontFamily: fonts.sans, marginTop: 6, letterSpacing: 2 }}>PROJETO EXCLUSIVO</div>
             <div style={{ position: "absolute", bottom: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <HorizonLogo size={36} />
-                <div style={{ fontSize: 13, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1 }}>www.grupohorizon.co • CNPJ 46.267.921/0001-16</div>
+                <HorizonLogo size={80} />
+                <div style={{ fontSize: 14, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1 }}>www.grupohorizon.co • CNPJ 46.267.921/0001-16</div>
             </div>
         </div>
     ),
@@ -718,10 +718,11 @@ export default function Presentation() {
     const SlideContent = slides[current];
 
     return (
-        <div style={{ width: "100%", maxWidth: "100vw", minHeight: "100vh", background: C.bg, fontFamily: fonts.sans, color: C.text, display: "flex", flexDirection: "column", userSelect: "none", overflowX: "hidden" }}>
+        <div style={{ width: "100%", minHeight: "100vh", background: C.bg, fontFamily: fonts.sans, color: C.text, display: "flex", flexDirection: "column", alignItems: "center", userSelect: "none", overflowX: "hidden" }}>
             <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .slide-container { animation: fadeIn 0.35s ease-out; }
+        .slide-wrapper { width: 100%; max-width: 1100px; margin: 0 auto; height: 100%; }
         .nav-btn { transition: all 0.2s; }
         .nav-btn:hover { background: rgba(201,168,76,0.12) !important; }
         .dot { transition: all 0.2s; cursor: pointer; }
@@ -731,20 +732,20 @@ export default function Presentation() {
       `}</style>
 
             {/* Slide Area */}
-            <div style={{ flex: 1, display: "flex", position: "relative", minHeight: 0 }}>
+            <div style={{ flex: 1, display: "flex", position: "relative", minHeight: 0, width: "100%", maxWidth: 1100, margin: "0 auto" }}>
                 <button className="nav-btn" onClick={() => go(-1)} disabled={current === 0}
-                    style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.06)", border: `1px solid ${C.borderSoft}`, color: current === 0 ? C.textMuted + "40" : C.gold, fontSize: 25, cursor: current === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+                    style={{ position: "absolute", left: -60, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.06)", border: `1px solid ${C.borderSoft}`, color: current === 0 ? C.textMuted + "40" : C.gold, fontSize: 25, cursor: current === 0 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
 
                 <div className="slide-container" key={current} style={{ flex: 1, opacity: transitioning ? 0 : 1, transition: "opacity 0.2s", overflow: "auto" }}>
                     <SlideContent />
                 </div>
 
                 <button className="nav-btn" onClick={() => go(1)} disabled={current === slides.length - 1}
-                    style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.06)", border: `1px solid ${C.borderSoft}`, color: current === slides.length - 1 ? C.textMuted + "40" : C.gold, fontSize: 25, cursor: current === slides.length - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+                    style={{ position: "absolute", right: -60, top: "50%", transform: "translateY(-50%)", zIndex: 10, width: 52, height: 52, borderRadius: "50%", background: "rgba(201,168,76,0.06)", border: `1px solid ${C.borderSoft}`, color: current === slides.length - 1 ? C.textMuted + "40" : C.gold, fontSize: 25, cursor: current === slides.length - 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
             </div>
 
             {/* Bottom bar */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", gap: 16, borderTop: `1px solid ${C.borderSoft}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 16px", gap: 16, borderTop: `1px solid ${C.borderSoft}`, width: "100%", maxWidth: 1100 }}>
                 <span style={{ fontSize: 14, color: C.textMuted, fontFamily: fonts.sans, letterSpacing: 1, minWidth: 50 }}>{String(current + 1).padStart(2, "0")} / {slides.length}</span>
                 <div style={{ display: "flex", gap: 5 }}>
                     {slides.map((_, i) => (
