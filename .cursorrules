@@ -1,0 +1,238 @@
+# CHRONOS — Cursor Rules
+# Plataforma Inteligente de Gestão de Relógios de Luxo
+# Client: Marcelo Miranda Soares Neto
+# Build: Horizon
+
+## PROJECT IDENTITY
+- Name: Chronos
+- Stack: Next.js 14+ (App Router), TypeScript strict, Supabase (Postgres + Auth + Storage + RLS), Tailwind CSS, Shadcn/UI
+- External APIs: Evolution API (WhatsApp), Nano Banana Pro 2 via fal.ai (image generation), Gemini Vision (image analysis)
+- Architecture: Clean Architecture + SOLID + OOP
+- Language: Brazilian Portuguese for UI text, English for code (variable names, comments, types)
+
+## ARCHITECTURE RULES (MANDATORY)
+
+### Layer Structure
+```
+src/
+  app/                    # Next.js routes, layouts, route handlers, server actions
+  domain/                 # Entities, value objects, domain services, ports (interfaces)
+  application/            # Use cases (commands & queries)
+  infrastructure/         # Supabase, Storage, NanoBanana, EvolutionAPI, Vision adapters
+  shared/                 # Errors, result types, Zod schemas, constants
+```
+
+### Layer Dependencies (STRICT)
+- `domain/` → ZERO external imports. No Next.js, no Supabase, no React. Pure TypeScript only.
+- `application/` → imports from `domain/` only. Never from `infrastructure/` or `app/`.
+- `infrastructure/` → imports from `domain/` (implements ports). Never from `application/` or `app/`.
+- `app/` → imports from `application/` and `shared/`. Uses `infrastructure/` only via composition root (`src/lib/di.ts`).
+- `shared/` → ZERO imports from other project layers. Only external libs (Zod, etc).
+
+### Dependency Injection
+- All use cases receive dependencies via constructor injection (ports/interfaces).
+- Composition root at `src/lib/di.ts` wires real implementations.
+- NEVER instantiate infrastructure classes directly inside use cases or route handlers.
+```typescript
+// ✅ CORRECT
+const useCase = container.resolve(CreateWatchUseCase);
+// or
+const useCase = new CreateWatchUseCase(
+  new SupabaseWatchRepository(supabase),
+  new SupabaseImageStorage(supabase),
+);
+
+// ❌ WRONG
+const supabase = createClient();
+const { data } = await supabase.from('watches').insert(...); // direct DB in route handler
+```
+
+### Entities & Value Objects
+- Entities have identity (id), encapsulate invariants, validate on construction.
+- Value objects are immutable, compared by value.
+- NEVER use raw objects/records from Supabase as domain entities. Always map at the infrastructure boundary.
+```typescript
+// ✅ CORRECT
+export class Watch {
+  private constructor(private readonly props: WatchProps) {
+    this.validate();
+  }
+  static create(input: CreateWatchInput): Watch { ... }
+  static fromPersistence(raw: WatchRow): Watch { ... }
+  toPersistence(): WatchRow { ... }
+}
+
+// ❌ WRONG
+type Watch = Database['public']['Tables']['watches']['Row'];
+```
+
+### Use Cases
+- One file per use case. Name pattern: `VerbNounUseCase.ts` (e.g., `CreateWatchUseCase.ts`).
+- Each use case has a single public `execute()` method.
+- Returns `Result<T, E>` pattern, never throws for expected errors.
+```typescript
+export class CreateWatchUseCase {
+  constructor(
+    private readonly watchRepo: IWatchRepository,
+    private readonly imageStorage: IImageStorage,
+  ) {}
+  async execute(input: CreateWatchInput): Promise<Result<Watch, CreateWatchError>> { ... }
+}
+```
+
+### Ports (Interfaces)
+- All external dependencies are abstracted as interfaces in `domain/ports/`.
+- Naming: `I{Name}` prefix for interfaces.
+```typescript
+// domain/ports/IWatchRepository.ts
+export interface IWatchRepository {
+  findById(id: string): Promise<Watch | null>;
+  save(watch: Watch): Promise<void>;
+  findByFilters(filters: WatchFilters): Promise<PaginatedResult<Watch>>;
+}
+
+// domain/ports/IMessageDispatcher.ts
+export interface IMessageDispatcher {
+  sendMedia(params: SendMediaParams): Promise<Result<void, DispatchError>>;
+  sendText(params: SendTextParams): Promise<Result<void, DispatchError>>;
+}
+
+// domain/ports/IMarketingAssetGenerator.ts
+export interface IMarketingAssetGenerator {
+  generateCard(params: GenerateCardParams): Promise<Result<GeneratedAsset, GenerationError>>;
+}
+
+// domain/ports/IImageAnalyzer.ts
+export interface IImageAnalyzer {
+  analyzeWatch(imageUrl: string): Promise<Result<WatchSuggestions, AnalysisError>>;
+}
+```
+
+## SUPABASE RULES
+
+### Client Usage
+- NEVER use `supabase` client directly in `app/` route handlers or server actions.
+- All Supabase calls go through repository/adapter classes in `infrastructure/`.
+- Use `createServerClient` for server-side (route handlers, server actions, server components).
+- Use `createBrowserClient` ONLY in client components that need realtime subscriptions.
+- NEVER expose `service_role` key to the browser.
+
+### Row Level Security
+- EVERY table MUST have RLS enabled.
+- ALL policies use `auth.uid()` joined through `memberships` table to verify org access.
+- NEVER use `security definer` functions unless absolutely necessary (document why).
+- Test RLS policies: always verify a user cannot access another org's data.
+
+### Storage
+- Buckets: `watch-images`, `finance-attachments`, `marketing-assets`.
+- Policies mirror table RLS via org membership.
+- Always generate signed URLs for private content; public bucket only for storefront images.
+
+### Migrations
+- SQL migration files in `supabase/migrations/` with timestamp prefix.
+- Each migration is idempotent where possible (use `IF NOT EXISTS`).
+- NEVER modify a migration after it has been applied. Create a new migration instead.
+
+## NEXT.JS RULES
+
+### Route Handlers (API)
+- Thin adapters: parse request → call use case → format response.
+- Validate input with Zod at the edge.
+- NEVER put business logic in route handlers.
+```typescript
+// app/api/v1/watches/route.ts
+export async function POST(req: Request) {
+  const body = await req.json();
+  const parsed = CreateWatchSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: parsed.error }, { status: 400 });
+
+  const useCase = container.resolve(CreateWatchUseCase);
+  const result = await useCase.execute(parsed.data);
+
+  if (result.isErr()) return NextResponse.json({ error: result.error }, { status: 422 });
+  return NextResponse.json(result.value, { status: 201 });
+}
+```
+
+### Server Actions
+- Use for form mutations tightly coupled to UI when it reduces boilerplate.
+- Still call use cases behind the scenes (same as route handlers).
+- Validate with Zod before calling use case.
+
+### Server Components
+- Default for all pages. Use `"use client"` only when interactivity requires it.
+- Fetch data via use cases (query use cases), not direct Supabase calls.
+
+### Client Components
+- Minimize. Only for: forms with complex state, realtime subscriptions, interactive UI (drag-drop, modals).
+- Prefix with `"use client"` directive.
+
+## TYPESCRIPT RULES
+- `strict: true` in tsconfig. No `any` except in test mocks with explicit cast.
+- Use `unknown` instead of `any` for untyped external data, then validate with Zod.
+- Prefer `type` over `interface` for DTOs; use `interface` for ports/contracts.
+- Enums: use `as const` objects instead of TypeScript `enum`.
+```typescript
+// ✅ CORRECT
+export const WATCH_STATUS = {
+  DRAFT: 'draft',
+  AVAILABLE: 'available',
+  RESERVED: 'reserved',
+  SOLD: 'sold',
+  CONSIGNED: 'consigned',
+} as const;
+export type WatchStatus = typeof WATCH_STATUS[keyof typeof WATCH_STATUS];
+
+// ❌ WRONG
+enum WatchStatus { Draft, Available, Reserved, Sold }
+```
+
+## UI / STYLING RULES
+- Tailwind CSS + Shadcn/UI components. No custom CSS files unless strictly necessary.
+- Dark theme as default (luxury aesthetic). Color tokens defined in `tailwind.config.ts`.
+- Color palette: navy (`#0F1724`), gold (`#C9A84C`), dark surface (`#12121A`), muted text (`#7A7A8A`).
+- All UI text in Brazilian Portuguese.
+- Responsive: mobile-first, but primary UX is desktop (Marcelo uses desktop mostly).
+- Loading states: skeleton components, never blank screens.
+- Error states: toast notifications via Sonner, not alert() or console.log.
+
+## NAMING CONVENTIONS
+- Files: `kebab-case.ts` for all files. Exception: React components in `PascalCase.tsx`.
+- Database: `snake_case` for tables, columns, and functions.
+- TypeScript: `camelCase` for variables/functions, `PascalCase` for types/classes/interfaces.
+- Use cases: `VerbNounUseCase` (e.g., `CreateWatchUseCase`, `ListClientsUseCase`).
+- Repositories: `Supabase{Entity}Repository` (e.g., `SupabaseWatchRepository`).
+- Adapters: `{Provider}{Capability}Adapter` (e.g., `EvolutionWhatsAppAdapter`, `NanoBananaImageAdapter`).
+
+## ERROR HANDLING
+- Domain errors are typed classes extending a base `DomainError`.
+- Use Result pattern (`Result<T, E>`) for expected errors. Never throw for business rule violations.
+- Throw only for unexpected/programmer errors (bugs).
+- Route handlers catch and map errors to HTTP status codes.
+- Log all errors with structured context (userId, watchId, action).
+
+## SECURITY CHECKLIST (EVERY PR)
+- [ ] No `service_role` key in client-side code.
+- [ ] RLS enabled on any new table.
+- [ ] Input validated with Zod before use case execution.
+- [ ] No raw SQL interpolation (use parameterized queries).
+- [ ] Auth checked in route handler/middleware before use case.
+- [ ] Financial amounts stored as integer cents (never float).
+- [ ] Sensitive fields (price, cost) only visible to authorized roles.
+
+## GIT / WORKFLOW
+- Branch naming: `phase-{N}/task-{NN}-{short-description}` (e.g., `phase-1/task-03-watch-crud`).
+- Commit messages: conventional commits (`feat:`, `fix:`, `refactor:`, `chore:`).
+- One task per PR. Small, reviewable PRs.
+
+## WHAT NOT TO DO
+- NEVER put business logic in React components.
+- NEVER call Supabase directly from app/ layer (always through infrastructure).
+- NEVER use `any` type without explicit justification.
+- NEVER store money as float. Use integer cents.
+- NEVER skip Zod validation at API boundaries.
+- NEVER create a migration that drops data without explicit confirmation.
+- NEVER hardcode API keys. Use environment variables.
+- NEVER commit .env files.
+- NEVER use `console.log` in production code. Use structured logger.
+- NEVER skip RLS on any table.
