@@ -17,7 +17,7 @@ export default async function PublicStorefrontPage({ params }: Props) {
               <Watch className="h-5 w-5 text-chronos-gold" />
             </div>
             <span className="text-lg font-semibold tracking-wider text-chronos-text">
-              CHRONOS
+              MARCELO MIRANDA
             </span>
           </div>
           <span className="text-sm text-chronos-text-muted capitalize">

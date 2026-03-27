@@ -34,7 +34,7 @@ export default function LoginPage() {
         return;
       }
 
-      toast.success("Bem-vindo ao Chronos!");
+      toast.success("Bem-vindo!");
       router.push("/");
       router.refresh();
     } catch {
@@ -61,11 +61,11 @@ export default function LoginPage() {
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-chronos-gold/10 mb-4">
               <Watch className="h-8 w-8 text-chronos-gold" />
             </div>
-            <h1 className="text-2xl font-semibold tracking-[0.2em] text-chronos-text">
-              CHRONOS
+            <h1 className="text-2xl font-semibold tracking-[0.15em] text-chronos-text">
+              MARCELO MIRANDA
             </h1>
             <p className="mt-2 text-sm text-chronos-text-muted">
-              Gestão Inteligente de Relógios de Luxo
+              Gestão de Relógios de Luxo
             </p>
           </div>
 

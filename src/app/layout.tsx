@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chronos — Gestão Inteligente de Relógios de Luxo",
+  title: "Marcelo Miranda — Gestão de Relógios de Luxo",
   description:
-    "Plataforma inteligente para gestão de inventário, marketing e vendas de relógios de luxo.",
+    "Plataforma de gestão de inventário e vendas de relógios de luxo.",
 };
 
 export default function RootLayout({

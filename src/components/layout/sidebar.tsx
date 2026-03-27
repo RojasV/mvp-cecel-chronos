@@ -93,9 +93,14 @@ export function Sidebar() {
             <Watch className="h-5 w-5 text-chronos-gold" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-semibold tracking-wider text-chronos-text">
-              CHRONOS
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold tracking-wider text-chronos-text leading-tight">
+                MARCELO
+              </span>
+              <span className="text-sm font-semibold tracking-wider text-chronos-gold leading-tight">
+                MIRANDA
+              </span>
+            </div>
           )}
         </Link>
       </div>
