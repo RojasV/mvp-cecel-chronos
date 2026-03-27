@@ -70,3 +70,9 @@
     @apply bg-chronos-surface text-chronos-text antialiased;
   }
 }
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: spin 3s linear infinite;
+  }
+}
