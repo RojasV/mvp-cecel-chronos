@@ -35,7 +35,7 @@ type StepReviewProps = {
 
 type WhatsAppStatus = "idle" | "sending" | "sent" | "error";
 
-const TARGET_PHONE = "5567981532222";
+const TARGET_PHONES = ["5567981532222", "5567981167199"];
 
 function formatWhatsAppMessage(data: WatchFormData): string {
   const price = data.asking_price
@@ -113,24 +113,33 @@ export function StepReview({
     try {
       const message = formatWhatsAppMessage(formData);
 
-      const response = await fetch("/api/v1/send-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: TARGET_PHONE,
-          text: message,
-          imageBase64: imageBase64 ?? undefined,
-        }),
-      });
+      const results = await Promise.allSettled(
+        TARGET_PHONES.map((phone) =>
+          fetch("/api/v1/send-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              phone,
+              text: message,
+              imageBase64: imageBase64 ?? undefined,
+            }),
+          }).then(async (res) => {
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || "Erro ao enviar WhatsApp");
+            }
+          }),
+        ),
+      );
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao enviar WhatsApp");
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length === results.length) {
+        throw new Error("Falha ao enviar para todos os números");
       }
 
       setWhatsappStatus("sent");
       toast.success("WhatsApp enviado!", {
-        description: `Mensagem enviada para ${TARGET_PHONE}`,
+        description: `Mensagem enviada para ${TARGET_PHONES.length} números`,
       });
     } catch (err) {
       setWhatsappStatus("error");
@@ -148,24 +157,34 @@ export function StepReview({
 
     try {
       const message = formatWhatsAppMessage(formData);
-      const response = await fetch("/api/v1/send-whatsapp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phone: TARGET_PHONE,
-          text: message,
-          imageBase64: imageBase64 ?? undefined,
-        }),
-      });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao enviar WhatsApp");
+      const results = await Promise.allSettled(
+        TARGET_PHONES.map((phone) =>
+          fetch("/api/v1/send-whatsapp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              phone,
+              text: message,
+              imageBase64: imageBase64 ?? undefined,
+            }),
+          }).then(async (res) => {
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || "Erro ao enviar WhatsApp");
+            }
+          }),
+        ),
+      );
+
+      const failed = results.filter((r) => r.status === "rejected");
+      if (failed.length === results.length) {
+        throw new Error("Falha ao enviar para todos os números");
       }
 
       setWhatsappStatus("sent");
       toast.success("WhatsApp enviado!", {
-        description: `Mensagem reenviada para ${TARGET_PHONE}`,
+        description: `Mensagem reenviada para ${TARGET_PHONES.length} números`,
       });
     } catch (err) {
       setWhatsappStatus("error");
@@ -211,7 +230,7 @@ export function StepReview({
                       Enviando via WhatsApp...
                     </p>
                     <p className="text-xs text-chronos-text-muted">
-                      Disparando para {TARGET_PHONE}
+                      Disparando para {TARGET_PHONES.length} números
                     </p>
                   </div>
                 </div>
@@ -225,7 +244,7 @@ export function StepReview({
                       WhatsApp enviado com sucesso!
                     </p>
                     <p className="text-xs text-chronos-text-muted">
-                      Mensagem com foto + dados entregue para {TARGET_PHONE}
+                      Mensagem com foto + dados entregue para {TARGET_PHONES.length} números
                     </p>
                   </div>
                 </div>
@@ -389,7 +408,7 @@ export function StepReview({
           </div>
           <p className="text-xs text-chronos-text-muted">
             Ao confirmar, uma mensagem com foto e dados do relógio será enviada
-            automaticamente para <strong className="text-chronos-text">{TARGET_PHONE}</strong>
+            automaticamente para <strong className="text-chronos-text">{TARGET_PHONES.join(" e ")}</strong>
           </p>
         </div>
 
