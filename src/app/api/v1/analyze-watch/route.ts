@@ -1,19 +1,49 @@
 import { NextResponse } from "next/server";
+import type { IImageAnalyzer } from "@/domain/ports/i-image-analyzer";
 import { GeminiVisionAdapter } from "@/infrastructure/ai/gemini-vision-adapter";
+import { OpenAIVisionAdapter } from "@/infrastructure/ai/openai-vision-adapter";
+import { ClaudeVisionAdapter } from "@/infrastructure/ai/claude-vision-adapter";
+import { FallbackImageAnalyzer } from "@/infrastructure/ai/fallback-image-analyzer";
 
 export const maxDuration = 60;
 
+function buildAnalyzer(): IImageAnalyzer {
+  const providers: { name: string; analyzer: IImageAnalyzer }[] = [];
+
+  if (process.env.GEMINI_API_KEY) {
+    providers.push({
+      name: "Gemini",
+      analyzer: new GeminiVisionAdapter(process.env.GEMINI_API_KEY),
+    });
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    providers.push({
+      name: "OpenAI",
+      analyzer: new OpenAIVisionAdapter(process.env.OPENAI_API_KEY),
+    });
+  }
+
+  if (process.env.ANTHROPIC_API_KEY) {
+    providers.push({
+      name: "Claude",
+      analyzer: new ClaudeVisionAdapter(process.env.ANTHROPIC_API_KEY),
+    });
+  }
+
+  if (providers.length === 0) {
+    throw new Error("No AI provider API keys configured");
+  }
+
+  if (providers.length === 1) {
+    return providers[0].analyzer;
+  }
+
+  return new FallbackImageAnalyzer(providers);
+}
+
 export async function POST(req: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Gemini API key not configured" },
-        { status: 500 },
-      );
-    }
-
     let body: { imageBase64?: string; mimeType?: string };
     try {
       body = await req.json();
@@ -33,7 +63,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const analyzer = new GeminiVisionAdapter(apiKey);
+    const analyzer = buildAnalyzer();
     const result = await analyzer.analyzeWatch(imageBase64, mimeType);
 
     if (result.isErr()) {
