@@ -7,7 +7,6 @@ export async function GET() {
   try {
     const supabase = createAdminClient();
 
-    // Fetch all watches for this org
     const { data: watches, error } = await supabase
       .from("watches")
       .select("id, brand, model, status, asking_price_cents, created_at, condition")
@@ -20,14 +19,13 @@ export async function GET() {
 
     const allWatches = watches || [];
 
-    // KPIs
     const totalWatches = allWatches.length;
     const totalValueCents = allWatches.reduce(
       (sum, w) => sum + (w.asking_price_cents || 0),
       0,
     );
-    const avgPriceCents = totalWatches > 0
-      ? Math.round(totalValueCents / totalWatches)
+    const averagePrice = totalWatches > 0
+      ? totalValueCents / 100 / totalWatches
       : 0;
 
     const statusCounts: Record<string, number> = {};
@@ -35,35 +33,31 @@ export async function GET() {
       statusCounts[w.status] = (statusCounts[w.status] || 0) + 1;
     }
 
-    // Brand distribution
-    const brandCounts: Record<string, { count: number; valueCents: number }> = {};
+    const brandMap: Record<string, { count: number; valueCents: number }> = {};
     for (const w of allWatches) {
-      if (!brandCounts[w.brand]) {
-        brandCounts[w.brand] = { count: 0, valueCents: 0 };
+      if (!brandMap[w.brand]) {
+        brandMap[w.brand] = { count: 0, valueCents: 0 };
       }
-      brandCounts[w.brand].count++;
-      brandCounts[w.brand].valueCents += w.asking_price_cents || 0;
+      brandMap[w.brand].count++;
+      brandMap[w.brand].valueCents += w.asking_price_cents || 0;
     }
 
-    const brandDistribution = Object.entries(brandCounts)
-      .map(([brand, data]) => ({
-        brand,
+    const brandDistribution = Object.entries(brandMap)
+      .map(([name, data]) => ({
+        name,
         count: data.count,
-        valueCents: data.valueCents,
+        value: data.valueCents / 100,
       }))
       .sort((a, b) => b.count - a.count);
 
-    // Recent watches (last 10)
     const recentWatches = allWatches.slice(0, 10).map((w) => ({
       id: w.id,
       brand: w.brand,
       model: w.model,
       status: w.status,
-      askingPriceCents: w.asking_price_cents,
-      createdAt: w.created_at,
+      asking_price: w.asking_price_cents ? w.asking_price_cents / 100 : null,
     }));
 
-    // Fetch acquisition data for cost analysis
     const { data: acquisitions } = await supabase
       .from("acquisitions")
       .select("purchase_cost_cents, acquisition_type")
@@ -73,15 +67,14 @@ export async function GET() {
       (sum, a) => sum + (a.purchase_cost_cents || 0),
       0,
     );
-    const potentialProfitCents = totalValueCents - totalCostCents;
 
     return NextResponse.json({
       kpis: {
         totalWatches,
-        totalValueCents,
-        avgPriceCents,
-        totalCostCents,
-        potentialProfitCents,
+        totalValue: totalValueCents / 100,
+        averagePrice,
+        totalCost: totalCostCents / 100,
+        potentialProfit: (totalValueCents - totalCostCents) / 100,
         statusCounts,
       },
       brandDistribution,
