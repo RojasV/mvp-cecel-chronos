@@ -1,8 +1,53 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SupabaseStorageAdapter } from "@/infrastructure/storage/supabase-storage-adapter";
 
 const DEFAULT_ORG_ID = "1cbb0d7b-f3a3-4e9d-931e-fd2e3e4001d1";
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const supabase = createAdminClient();
+    const { searchParams } = new URL(req.url);
+    const ids = searchParams.get("ids");
+
+    if (!ids) {
+      return NextResponse.json({ error: "ids parameter required" }, { status: 400 });
+    }
+
+    const idList = ids.split(",").filter(Boolean);
+
+    const { data: images } = await supabase
+      .from("watch_images")
+      .select("storage_path")
+      .in("watch_id", idList);
+
+    if (images?.length) {
+      const storage = new SupabaseStorageAdapter(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      );
+      for (const img of images) {
+        try {
+          await storage.deleteWatchImage(img.storage_path);
+        } catch {}
+      }
+    }
+
+    await supabase.from("whatsapp_messages").delete().in("watch_id", idList);
+    await supabase.from("watch_images").delete().in("watch_id", idList);
+    await supabase.from("acquisitions").delete().in("watch_id", idList);
+    const { error } = await supabase.from("watches").delete().in("id", idList).eq("org_id", DEFAULT_ORG_ID);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ deleted: idList.length });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
 
 export async function GET(req: Request) {
   try {

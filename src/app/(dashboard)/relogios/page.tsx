@@ -20,10 +20,8 @@ import {
   Send,
   Loader2,
   Search,
-  PackageCheck,
   X,
-  CheckCircle2,
-  AlertTriangle,
+  Trash2,
   ImageOff,
 } from "lucide-react";
 import Link from "next/link";
@@ -60,6 +58,7 @@ export default function EstoquePage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dispatching, setDispatching] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchWatches = useCallback(async () => {
     setLoading(true);
@@ -104,6 +103,35 @@ export default function EstoquePage() {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filtered.map((w) => w.id)));
+    }
+  }
+
+  async function handleDelete() {
+    if (selectedIds.size === 0) return;
+    const confirmMsg = selectedIds.size === 1
+      ? "Tem certeza que deseja excluir este relógio?"
+      : `Tem certeza que deseja excluir ${selectedIds.size} relógios?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeleting(true);
+    try {
+      const ids = Array.from(selectedIds).join(",");
+      const res = await fetch(`/api/v1/watches?ids=${ids}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erro ao excluir");
+      }
+      toast.success("Excluído!", {
+        description: `${selectedIds.size} relógio(s) removido(s) do estoque`,
+      });
+      setSelectedIds(new Set());
+      fetchWatches();
+    } catch (err) {
+      toast.error("Erro ao excluir", {
+        description: err instanceof Error ? err.message : "Tente novamente",
+      });
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -219,6 +247,20 @@ export default function EstoquePage() {
             >
               <X className="mr-1 h-3 w-3" />
               Limpar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleting}
+              variant="outline"
+              className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+            >
+              {deleting ? (
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-3 w-3" />
+              )}
+              Excluir
             </Button>
             <Button
               size="sm"

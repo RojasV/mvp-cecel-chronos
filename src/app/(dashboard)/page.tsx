@@ -46,13 +46,13 @@ type DashboardData = {
 
 const CHART_COLORS = [
   "#D4AF37",
-  "#C9A33A",
-  "#BF973D",
-  "#6B8E7B",
-  "#8B7355",
-  "#7B9EB8",
-  "#A67B5B",
-  "#9B8EC9",
+  "#5EEAD4",
+  "#818CF8",
+  "#FB923C",
+  "#F472B6",
+  "#38BDF8",
+  "#A3E635",
+  "#C084FC",
 ];
 
 function formatCurrency(value: number): string {
@@ -180,20 +180,21 @@ export default function DashboardPage() {
           <CardContent>
             {brands.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={brands}>
+                <BarChart data={brands} barCategoryGap="30%">
                   <XAxis
                     dataKey="name"
-                    tick={{ fill: "#A0A0B0", fontSize: 12 }}
-                    axisLine={{ stroke: "#2a2a3e" }}
+                    tick={{ fill: "#9ca3af", fontSize: 12 }}
+                    axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "#A0A0B0", fontSize: 12 }}
-                    axisLine={{ stroke: "#2a2a3e" }}
+                    tick={{ fill: "#9ca3af", fontSize: 12 }}
+                    axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
                   />
                   <Tooltip
+                    cursor={{ fill: "rgba(255,255,255,0.05)" }}
                     contentStyle={{
                       backgroundColor: "#1a1a2e",
                       border: "1px solid #2a2a3e",

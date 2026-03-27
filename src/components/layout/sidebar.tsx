@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -16,6 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -77,7 +78,15 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  async function handleLogout() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <aside
@@ -202,8 +211,9 @@ export function Sidebar() {
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <button
+              onClick={handleLogout}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-chronos-text-muted transition-colors hover:bg-chronos-surface-hover hover:text-chronos-text",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-chronos-text-muted transition-colors hover:bg-red-500/10 hover:text-red-400",
                 collapsed && "justify-center px-2",
               )}
             >
