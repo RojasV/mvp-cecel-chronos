@@ -25,6 +25,7 @@ import {
   ImageOff,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { WATCH_STATUS_LABELS, WATCH_CONDITION_LABELS } from "@/shared/constants";
 import type { WatchStatus, WatchCondition } from "@/shared/constants";
@@ -52,6 +53,7 @@ type WatchItem = {
 const TARGET_PHONES = ["5567981532222", "5567981167199"];
 
 export default function EstoquePage() {
+  const router = useRouter();
   const [watches, setWatches] = useState<WatchItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -330,10 +332,10 @@ export default function EstoquePage() {
             return (
               <Card
                 key={w.id}
-                className={`border-chronos-border bg-chronos-surface-raised overflow-hidden transition-all cursor-pointer hover:border-chronos-gold/30 ${
+                className={`border-chronos-border bg-chronos-surface-raised overflow-hidden transition-all cursor-pointer hover:border-chronos-gold/30 hover:shadow-lg hover:shadow-chronos-gold/5 ${
                   isSelected ? "ring-2 ring-chronos-gold border-chronos-gold" : ""
                 }`}
-                onClick={() => toggleSelect(w.id)}
+                onClick={() => router.push(`/relogios/${w.id}`)}
               >
                 <div className="relative aspect-square bg-chronos-surface">
                   {img ? (
@@ -347,11 +349,13 @@ export default function EstoquePage() {
                       <ImageOff className="h-12 w-12 text-chronos-text-subtle" />
                     </div>
                   )}
-                  <div className="absolute top-2 left-2">
+                  <div
+                    className="absolute top-2 left-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleSelect(w.id)}
-                      onClick={(e) => e.stopPropagation()}
                       className="border-white/50 bg-black/30 data-[state=checked]:bg-chronos-gold data-[state=checked]:border-chronos-gold"
                     />
                   </div>

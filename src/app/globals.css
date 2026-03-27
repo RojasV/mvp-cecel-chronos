@@ -69,6 +69,24 @@
   body {
     @apply bg-chronos-surface text-chronos-text antialiased;
   }
+  button,
+  [role="button"],
+  a,
+  select,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  label[for],
+  [data-slot="select-trigger"],
+  [data-slot="select-item"],
+  [data-slot="checkbox"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {
