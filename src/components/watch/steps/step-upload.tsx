@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Camera, Upload, ImageIcon, Sparkles } from "lucide-react";
+import { Camera, Upload, ImageIcon, Sparkles, Loader2 } from "lucide-react";
+import { compressImage } from "@/lib/compress-image";
+import { toast } from "sonner";
 
 type StepUploadProps = {
   imagePreview: string | null;
@@ -15,18 +17,23 @@ export function StepUpload({
   onImageSelected,
 }: StepUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [compressing, setCompressing] = useState(false);
 
   const handleFile = useCallback(
-    (file: File) => {
+    async (file: File) => {
       if (!file.type.startsWith("image/")) return;
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const base64 = dataUrl.split(",")[1];
-        onImageSelected(dataUrl, base64, file.type);
-      };
-      reader.readAsDataURL(file);
+      setCompressing(true);
+      try {
+        const { base64, preview, mimeType } = await compressImage(file);
+        onImageSelected(preview, base64, mimeType);
+      } catch {
+        toast.error("Erro ao processar imagem", {
+          description: "Tente outra foto.",
+        });
+      } finally {
+        setCompressing(false);
+      }
     },
     [onImageSelected],
   );
@@ -57,7 +64,14 @@ export function StepUpload({
           </p>
         </div>
 
-        {imagePreview ? (
+        {compressing ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-10 w-10 text-chronos-gold animate-spin mb-4" />
+            <p className="text-sm text-chronos-text-muted">
+              Processando imagem...
+            </p>
+          </div>
+        ) : imagePreview ? (
           <div className="flex flex-col items-center gap-4">
             <div className="relative group">
               <img
@@ -75,23 +89,6 @@ export function StepUpload({
                 </span>
               </button>
             </div>
-            <Button
-              onClick={() => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const dataUrl = e.target?.result as string;
-                  onImageSelected(
-                    imagePreview,
-                    dataUrl.split(",")[1],
-                    "image/jpeg",
-                  );
-                };
-              }}
-              className="bg-chronos-gold text-chronos-navy font-semibold hover:bg-chronos-gold-light"
-            >
-              <Sparkles className="mr-2 h-4 w-4" />
-              Continuar para Análise IA
-            </Button>
           </div>
         ) : (
           <div
@@ -143,7 +140,7 @@ export function StepUpload({
             </div>
 
             <p className="text-xs text-chronos-text-subtle mt-4">
-              JPG, PNG ou WebP — máximo 10MB
+              JPG, PNG ou WebP — a imagem será otimizada automaticamente
             </p>
           </div>
         )}
@@ -162,4 +159,3 @@ export function StepUpload({
     </Card>
   );
 }
-

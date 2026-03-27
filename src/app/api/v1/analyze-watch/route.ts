@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { GeminiVisionAdapter } from "@/infrastructure/ai/gemini-vision-adapter";
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -12,7 +14,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const { imageBase64, mimeType } = await req.json();
+    let body: { imageBase64?: string; mimeType?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Request body too large or invalid. Try a smaller image." },
+        { status: 413 },
+      );
+    }
+
+    const { imageBase64, mimeType } = body;
 
     if (!imageBase64 || !mimeType) {
       return NextResponse.json(
@@ -32,9 +44,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(result.value);
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Internal server error: ${message}` },
       { status: 500 },
     );
   }

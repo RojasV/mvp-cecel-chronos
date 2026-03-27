@@ -88,12 +88,26 @@ export function StepAnalysis({
       clearInterval(progressInterval);
       setProgress(100);
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Erro ao analisar imagem");
+      const text = await response.text();
+
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(
+          response.status === 413
+            ? "Imagem muito grande. Tente com uma foto menor."
+            : `Erro no servidor (${response.status}). Tente novamente.`,
+        );
       }
 
-      const result: WatchSuggestions = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          (data.error as string) || "Erro ao analisar imagem",
+        );
+      }
+
+      const result = data as unknown as WatchSuggestions;
       setSuggestions(result);
       setState("complete");
     } catch (err) {
