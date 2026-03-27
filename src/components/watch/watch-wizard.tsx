@@ -196,6 +196,7 @@ export function WatchWizard() {
           <StepReview
             formData={formData}
             imagePreview={imagePreview}
+            imageBase64={imageBase64}
             isComplete={isComplete}
             onConfirm={handleConfirm}
             onEdit={() => setCurrentStep(3)}
