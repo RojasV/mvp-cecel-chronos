@@ -71,9 +71,6 @@ function formatWhatsAppMessage(data: WatchFormData): string {
     lines.push(data.description);
   }
 
-  lines.push("");
-  lines.push("_Cadastrado via Chronos — Gestão Inteligente de Relógios de Luxo_");
-
   return lines.join("\n");
 }
 
