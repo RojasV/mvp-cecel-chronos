@@ -26,10 +26,10 @@ export async function POST(req: Request) {
     const adapter = new EvolutionWhatsAppAdapter(apiUrl, apiKey, instanceName);
 
     if (imageBase64) {
-      const mediaUrl = `data:image/jpeg;base64,${imageBase64}`;
+      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, "");
       const result = await adapter.sendMedia({
         phone,
-        mediaUrl,
+        mediaUrl: cleanBase64,
         caption: text,
         mimeType: "image/jpeg",
       });
