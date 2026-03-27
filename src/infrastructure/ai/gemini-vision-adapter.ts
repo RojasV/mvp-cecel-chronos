@@ -42,6 +42,13 @@ Rules:
 - Confidence scores: 0.9+ = very sure, 0.7-0.9 = likely, 0.5-0.7 = uncertain, <0.5 = guess
 - For dial_color, case_material, movement, accessories: always respond in Portuguese`;
 
+const MAX_RETRIES = 3;
+const INITIAL_DELAY_MS = 3000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class GeminiVisionAdapter implements IImageAnalyzer {
   private readonly genAI: GoogleGenerativeAI;
 
@@ -53,58 +60,81 @@ export class GeminiVisionAdapter implements IImageAnalyzer {
     imageBase64: string,
     mimeType: string,
   ): Promise<Result<WatchSuggestions, AnalysisError>> {
-    try {
-      const model = this.genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-      });
+    let lastError: string = "Unknown error";
 
-      const result = await model.generateContent([
-        ANALYSIS_PROMPT,
-        {
-          inlineData: {
-            data: imageBase64,
-            mimeType,
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const model = this.genAI.getGenerativeModel({
+          model: "gemini-2.0-flash",
+        });
+
+        const result = await model.generateContent([
+          ANALYSIS_PROMPT,
+          {
+            inlineData: {
+              data: imageBase64,
+              mimeType,
+            },
           },
-        },
-      ]);
+        ]);
 
-      const response = result.response;
-      const text = response.text();
+        const response = result.response;
+        const text = response.text();
 
-      const cleaned = text
-        .replace(/```json\s*/g, "")
-        .replace(/```\s*/g, "")
-        .trim();
+        const cleaned = text
+          .replace(/```json\s*/g, "")
+          .replace(/```\s*/g, "")
+          .trim();
 
-      const parsed = JSON.parse(cleaned) as WatchSuggestions;
+        const parsed = JSON.parse(cleaned) as WatchSuggestions;
 
-      if (!parsed.confidence_scores) {
-        parsed.confidence_scores = {};
-      }
+        if (!parsed.confidence_scores) {
+          parsed.confidence_scores = {};
+        }
 
-      return Result.ok(parsed);
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown error";
+        return Result.ok(parsed);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        lastError = message;
 
-      if (message.includes("429") || message.includes("quota")) {
+        const isRateLimited =
+          message.includes("429") ||
+          message.includes("quota") ||
+          message.includes("rate") ||
+          message.includes("Resource has been exhausted");
+
+        if (isRateLimited && attempt < MAX_RETRIES) {
+          const waitMs = INITIAL_DELAY_MS * Math.pow(2, attempt);
+          await delay(waitMs);
+          continue;
+        }
+
+        if (isRateLimited) {
+          return Result.err({
+            code: "RATE_LIMITED",
+            message:
+              "Limite de requisições da IA excedido. Aguarde 1 minuto e tente novamente.",
+          });
+        }
+
+        if (message.includes("JSON")) {
+          return Result.err({
+            code: "PARSE_ERROR",
+            message: "Não foi possível interpretar a resposta da IA.",
+          });
+        }
+
         return Result.err({
-          code: "RATE_LIMITED",
-          message: "API rate limit exceeded. Try again in a moment.",
+          code: "API_ERROR",
+          message: `Erro na API Gemini: ${message}`,
         });
       }
-
-      if (message.includes("JSON")) {
-        return Result.err({
-          code: "PARSE_ERROR",
-          message: "Failed to parse AI response as structured data.",
-        });
-      }
-
-      return Result.err({
-        code: "API_ERROR",
-        message: `Gemini API error: ${message}`,
-      });
     }
+
+    return Result.err({
+      code: "API_ERROR",
+      message: `Erro após ${MAX_RETRIES} tentativas: ${lastError}`,
+    });
   }
 }
