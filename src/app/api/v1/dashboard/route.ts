@@ -18,15 +18,17 @@ export async function GET() {
     }
 
     const allWatches = watches || [];
-
     const totalWatches = allWatches.length;
-    const totalValueCents = allWatches.reduce(
-      (sum, w) => sum + (w.asking_price_cents || 0),
+
+    const watchesWithPrice = allWatches.filter((w) => w.asking_price_cents > 0);
+    const totalValueCents = watchesWithPrice.reduce(
+      (sum, w) => sum + w.asking_price_cents,
       0,
     );
-    const averagePrice = totalWatches > 0
-      ? totalValueCents / 100 / totalWatches
-      : 0;
+    const averagePrice =
+      watchesWithPrice.length > 0
+        ? totalValueCents / 100 / watchesWithPrice.length
+        : 0;
 
     const statusCounts: Record<string, number> = {};
     for (const w of allWatches) {
@@ -60,8 +62,21 @@ export async function GET() {
 
     const { data: acquisitions } = await supabase
       .from("acquisitions")
-      .select("purchase_cost_cents, acquisition_type")
+      .select("watch_id, purchase_cost_cents")
       .eq("org_id", DEFAULT_ORG_ID);
+
+    const costByWatch = new Map<string, number>();
+    for (const a of acquisitions || []) {
+      costByWatch.set(a.watch_id, (costByWatch.get(a.watch_id) || 0) + (a.purchase_cost_cents || 0));
+    }
+
+    let profitCents = 0;
+    let costOfPricedWatches = 0;
+    for (const w of watchesWithPrice) {
+      const cost = costByWatch.get(w.id) || 0;
+      costOfPricedWatches += cost;
+      profitCents += w.asking_price_cents - cost;
+    }
 
     const totalCostCents = (acquisitions || []).reduce(
       (sum, a) => sum + (a.purchase_cost_cents || 0),
@@ -74,7 +89,7 @@ export async function GET() {
         totalValue: totalValueCents / 100,
         averagePrice,
         totalCost: totalCostCents / 100,
-        potentialProfit: (totalValueCents - totalCostCents) / 100,
+        potentialProfit: profitCents / 100,
         statusCounts,
       },
       brandDistribution,
