@@ -31,7 +31,10 @@ export async function GET(
     }
 
     let supplierName: string | null = null;
-    const acq = (watch.acquisitions as Record<string, unknown>[])?.[0];
+    const rawAcq = watch.acquisitions;
+    const acq: Record<string, unknown> | undefined = Array.isArray(rawAcq)
+      ? rawAcq[0]
+      : rawAcq ?? undefined;
     if (acq?.supplier_id) {
       const { data: supplier } = await supabase
         .from("suppliers")
