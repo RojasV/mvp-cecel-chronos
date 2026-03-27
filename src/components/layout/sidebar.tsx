@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -24,14 +25,21 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const navItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  disabled?: boolean;
+};
+
+const navItems: NavItem[] = [
   {
     label: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
   {
-    label: "Relógios",
+    label: "Estoque",
     href: "/relogios",
     icon: Watch,
   },
@@ -39,26 +47,31 @@ const navItems = [
     label: "Clientes",
     href: "/clientes",
     icon: Users,
+    disabled: true,
   },
   {
     label: "Fornecedores",
     href: "/fornecedores",
     icon: Truck,
+    disabled: true,
   },
   {
     label: "Financeiro",
     href: "/financeiro",
     icon: DollarSign,
+    disabled: true,
   },
   {
     label: "WhatsApp",
     href: "/whatsapp",
     icon: MessageCircle,
+    disabled: true,
   },
   {
     label: "Configurações",
     href: "/configuracoes",
     icon: Settings,
+    disabled: true,
   },
 ];
 
@@ -96,6 +109,47 @@ export function Sidebar() {
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
 
+          if (item.disabled) {
+            const content = (
+              <div
+                key={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-chronos-text-subtle opacity-50 cursor-not-allowed",
+                  collapsed && "justify-center px-2",
+                )}
+              >
+                <item.icon className="h-5 w-5 shrink-0 text-chronos-text-subtle" />
+                {!collapsed && (
+                  <span className="flex items-center gap-2">
+                    {item.label}
+                    <Badge
+                      variant="outline"
+                      className="border-0 bg-chronos-surface-hover text-chronos-text-subtle text-[9px] px-1.5 py-0"
+                    >
+                      Em breve
+                    </Badge>
+                  </span>
+                )}
+              </div>
+            );
+
+            if (collapsed) {
+              return (
+                <Tooltip key={item.href} delayDuration={0}>
+                  <TooltipTrigger asChild>{content}</TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="bg-chronos-surface-raised text-chronos-text border-chronos-border"
+                  >
+                    {item.label} — Em breve
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return content;
+          }
+
           const linkContent = (
             <Link
               key={item.href}
@@ -122,7 +176,10 @@ export function Sidebar() {
             return (
               <Tooltip key={item.href} delayDuration={0}>
                 <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                <TooltipContent side="right" className="bg-chronos-surface-raised text-chronos-text border-chronos-border">
+                <TooltipContent
+                  side="right"
+                  className="bg-chronos-surface-raised text-chronos-text border-chronos-border"
+                >
                   {item.label}
                 </TooltipContent>
               </Tooltip>
@@ -150,7 +207,10 @@ export function Sidebar() {
             </button>
           </TooltipTrigger>
           {collapsed && (
-            <TooltipContent side="right" className="bg-chronos-surface-raised text-chronos-text border-chronos-border">
+            <TooltipContent
+              side="right"
+              className="bg-chronos-surface-raised text-chronos-text border-chronos-border"
+            >
               Sair
             </TooltipContent>
           )}

@@ -30,7 +30,14 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data);
+    const watches = (data ?? []).map((w: Record<string, unknown>) => ({
+      ...w,
+      asking_price: typeof w.asking_price_cents === "number"
+        ? (w.asking_price_cents as number) / 100
+        : null,
+    }));
+
+    return NextResponse.json({ watches });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

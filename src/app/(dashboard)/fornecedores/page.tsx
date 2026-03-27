@@ -1,20 +1,36 @@
 import { PageHeader } from "@/components/layout/page-header";
-import { EmptyState } from "@/components/layout/empty-state";
-import { Truck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Truck, Lock } from "lucide-react";
 
 export default function FornecedoresPage() {
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Fornecedores"
-        description="Gerencie seus fornecedores e aquisições"
-      />
+      <PageHeader title="Fornecedores" description="Gerencie seus fornecedores e aquisições">
+        <Badge variant="outline" className="border-0 bg-chronos-surface-hover text-chronos-text-muted">
+          Em breve
+        </Badge>
+      </PageHeader>
 
-      <EmptyState
-        icon={Truck}
-        title="Nenhum fornecedor cadastrado"
-        description="A gestão de fornecedores e aquisições estará disponível na Fase 4 do projeto. Aqui você poderá registrar fornecedores, custos de aquisição e margens."
-      />
+      <Card className="border-chronos-border bg-chronos-surface-raised">
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center justify-center py-16 text-chronos-text-muted">
+            <div className="relative mb-6">
+              <Truck className="h-16 w-16 text-chronos-text-subtle" />
+              <div className="absolute -bottom-1 -right-1 rounded-full bg-chronos-surface-raised p-1">
+                <Lock className="h-4 w-4 text-chronos-text-subtle" />
+              </div>
+            </div>
+            <h2 className="text-lg font-semibold text-chronos-text mb-2">
+              Módulo de Fornecedores
+            </h2>
+            <p className="text-sm text-center max-w-md">
+              A gestão completa de fornecedores estará disponível em breve. Os fornecedores
+              cadastrados nas aquisições já aparecem automaticamente aqui.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

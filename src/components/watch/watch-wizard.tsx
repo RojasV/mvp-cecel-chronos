@@ -2,11 +2,18 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Camera, Sparkles, FileEdit, CheckCircle2 } from "lucide-react";
+import {
+  ShoppingCart,
+  Camera,
+  Sparkles,
+  FileEdit,
+  CheckCircle2,
+} from "lucide-react";
+import { StepAcquisition } from "./steps/step-acquisition";
 import { StepUpload } from "./steps/step-upload";
 import { StepAnalysis } from "./steps/step-analysis";
 import { StepForm } from "./steps/step-form";
-import { StepReview } from "./steps/step-review";
+import { StepSave } from "./steps/step-save";
 import type { WatchSuggestions } from "@/domain/ports/i-image-analyzer";
 
 export type WatchFormData = {
@@ -25,11 +32,19 @@ export type WatchFormData = {
   notes: string;
 };
 
+export type AcquisitionData = {
+  type: "direct_purchase" | "trade";
+  purchase_cost: string;
+  supplier_name: string;
+  acquired_at: string;
+};
+
 const STEPS = [
-  { id: 1, label: "Foto", icon: Camera },
-  { id: 2, label: "Análise IA", icon: Sparkles },
-  { id: 3, label: "Dados", icon: FileEdit },
-  { id: 4, label: "Revisão", icon: CheckCircle2 },
+  { id: 1, label: "Aquisição", icon: ShoppingCart },
+  { id: 2, label: "Foto", icon: Camera },
+  { id: 3, label: "Análise IA", icon: Sparkles },
+  { id: 4, label: "Dados", icon: FileEdit },
+  { id: 5, label: "Salvar", icon: CheckCircle2 },
 ] as const;
 
 const EMPTY_FORM: WatchFormData = {
@@ -48,16 +63,27 @@ const EMPTY_FORM: WatchFormData = {
   notes: "",
 };
 
+const EMPTY_ACQUISITION: AcquisitionData = {
+  type: "direct_purchase",
+  purchase_cost: "",
+  supplier_name: "",
+  acquired_at: new Date().toISOString().split("T")[0],
+};
+
 export function WatchWizard() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [acquisitionData, setAcquisitionData] =
+    useState<AcquisitionData>(EMPTY_ACQUISITION);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMimeType, setImageMimeType] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<WatchSuggestions | null>(
-    null,
-  );
+  const [suggestions, setSuggestions] = useState<WatchSuggestions | null>(null);
   const [formData, setFormData] = useState<WatchFormData>(EMPTY_FORM);
-  const [isComplete, setIsComplete] = useState(false);
+
+  function handleAcquisitionComplete(data: AcquisitionData) {
+    setAcquisitionData(data);
+    setCurrentStep(2);
+  }
 
   function handleImageSelected(
     preview: string,
@@ -67,7 +93,7 @@ export function WatchWizard() {
     setImagePreview(preview);
     setImageBase64(base64);
     setImageMimeType(mimeType);
-    setCurrentStep(2);
+    setCurrentStep(3);
   }
 
   function handleAnalysisComplete(result: WatchSuggestions) {
@@ -87,30 +113,26 @@ export function WatchWizard() {
       asking_price: "",
       notes: "",
     });
-    setCurrentStep(3);
+    setCurrentStep(4);
   }
 
   function handleSkipAnalysis() {
-    setCurrentStep(3);
+    setCurrentStep(4);
   }
 
   function handleFormComplete(data: WatchFormData) {
     setFormData(data);
-    setCurrentStep(4);
-  }
-
-  function handleConfirm() {
-    setIsComplete(true);
+    setCurrentStep(5);
   }
 
   function handleReset() {
     setCurrentStep(1);
+    setAcquisitionData(EMPTY_ACQUISITION);
     setImagePreview(null);
     setImageBase64(null);
     setImageMimeType(null);
     setSuggestions(null);
     setFormData(EMPTY_FORM);
-    setIsComplete(false);
   }
 
   return (
@@ -125,7 +147,7 @@ export function WatchWizard() {
               }}
               disabled={step.id > currentStep}
               className={cn(
-                "flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
+                "flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                 currentStep === step.id &&
                   "bg-chronos-gold/10 text-chronos-gold",
                 step.id < currentStep &&
@@ -151,12 +173,12 @@ export function WatchWizard() {
                   <step.icon className="h-4 w-4" />
                 )}
               </div>
-              <span className="hidden sm:inline">{step.label}</span>
+              <span className="hidden md:inline">{step.label}</span>
             </button>
             {index < STEPS.length - 1 && (
               <div
                 className={cn(
-                  "mx-2 h-px flex-1 transition-colors",
+                  "mx-1 h-px flex-1 transition-colors",
                   step.id < currentStep
                     ? "bg-chronos-success/30"
                     : "bg-chronos-border",
@@ -170,12 +192,18 @@ export function WatchWizard() {
       {/* Step content */}
       <div className="min-h-[500px]">
         {currentStep === 1 && (
+          <StepAcquisition
+            data={acquisitionData}
+            onComplete={handleAcquisitionComplete}
+          />
+        )}
+        {currentStep === 2 && (
           <StepUpload
             imagePreview={imagePreview}
             onImageSelected={handleImageSelected}
           />
         )}
-        {currentStep === 2 && (
+        {currentStep === 3 && (
           <StepAnalysis
             imageBase64={imageBase64!}
             imageMimeType={imageMimeType!}
@@ -184,22 +212,23 @@ export function WatchWizard() {
             onSkip={handleSkipAnalysis}
           />
         )}
-        {currentStep === 3 && (
+        {currentStep === 4 && (
           <StepForm
             formData={formData}
             suggestions={suggestions}
             onComplete={handleFormComplete}
-            onBack={() => setCurrentStep(2)}
+            onBack={() => setCurrentStep(3)}
           />
         )}
-        {currentStep === 4 && (
-          <StepReview
+        {currentStep === 5 && (
+          <StepSave
             formData={formData}
+            acquisitionData={acquisitionData}
             imagePreview={imagePreview}
             imageBase64={imageBase64}
-            isComplete={isComplete}
-            onConfirm={handleConfirm}
-            onEdit={() => setCurrentStep(3)}
+            imageMimeType={imageMimeType}
+            aiSuggestions={suggestions}
+            onEdit={() => setCurrentStep(4)}
             onReset={handleReset}
           />
         )}

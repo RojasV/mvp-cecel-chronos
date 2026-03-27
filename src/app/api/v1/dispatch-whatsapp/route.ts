@@ -142,7 +142,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       total: results.length,
-      success: successCount,
+      sent: successCount,
       failed: failCount,
       results,
     });
