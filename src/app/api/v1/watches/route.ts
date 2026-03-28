@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         description: description || null,
         asking_price_cents: askingPriceCents,
         notes: notes || null,
-        status: "draft",
+        status: "available",
         ai_suggestions: ai_suggestions || null,
         ai_suggestions_confirmed: !!ai_suggestions,
       })
