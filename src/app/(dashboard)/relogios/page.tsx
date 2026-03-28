@@ -23,6 +23,7 @@ import {
   X,
   Trash2,
   ImageOff,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -325,19 +326,19 @@ export default function EstoquePage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
           {filtered.map((w) => {
             const img = primaryImage(w);
             const isSelected = selectedIds.has(w.id);
             return (
               <Card
                 key={w.id}
-                className={`border-chronos-border bg-chronos-surface-raised overflow-hidden transition-all cursor-pointer hover:border-chronos-gold/30 hover:shadow-lg hover:shadow-chronos-gold/5 ${
+                className={`border-chronos-border bg-chronos-surface-raised overflow-hidden transition-all cursor-pointer hover:border-chronos-gold/30 ${
                   isSelected ? "ring-2 ring-chronos-gold border-chronos-gold" : ""
                 }`}
-                onClick={() => router.push(`/relogios/${w.id}`)}
+                onClick={() => toggleSelect(w.id)}
               >
-                <div className="relative aspect-square bg-chronos-surface">
+                <div className="relative aspect-[4/3] bg-chronos-surface">
                   {img ? (
                     <img
                       src={img}
@@ -346,11 +347,11 @@ export default function EstoquePage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <ImageOff className="h-12 w-12 text-chronos-text-subtle" />
+                      <ImageOff className="h-8 w-8 text-chronos-text-subtle" />
                     </div>
                   )}
                   <div
-                    className="absolute top-2 left-2"
+                    className="absolute top-1.5 left-1.5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Checkbox
@@ -359,29 +360,33 @@ export default function EstoquePage() {
                       className="border-white/50 bg-black/30 data-[state=checked]:bg-chronos-gold data-[state=checked]:border-chronos-gold"
                     />
                   </div>
-                  <div className="absolute top-2 right-2">
+                  <div className="absolute top-1.5 right-1.5">
                     {getStatusBadge(w.status)}
                   </div>
                 </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-chronos-text truncate">
+                <CardContent className="p-2.5">
+                  <h3 className="text-xs font-semibold text-chronos-text truncate">
                     {w.brand} {w.model}
                   </h3>
                   {w.reference && (
-                    <p className="text-xs text-chronos-text-muted truncate">
+                    <p className="text-[10px] text-chronos-text-muted truncate">
                       Ref. {w.reference}
                     </p>
                   )}
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-bold text-chronos-gold">
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-xs font-bold text-chronos-gold">
                       {formatPrice(w.asking_price)}
                     </span>
-                    {w.condition && (
-                      <span className="text-xs text-chronos-text-subtle">
-                        {WATCH_CONDITION_LABELS[w.condition as WatchCondition] ??
-                          w.condition}
-                      </span>
-                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/relogios/${w.id}`);
+                      }}
+                      className="flex items-center gap-1 text-[10px] text-chronos-text-muted hover:text-chronos-gold transition-colors"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Detalhes
+                    </button>
                   </div>
                 </CardContent>
               </Card>
