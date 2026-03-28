@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   ArrowLeft,
   Loader2,
@@ -20,6 +21,7 @@ import {
   Repeat2,
   Calendar,
   User,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -96,6 +98,7 @@ export default function WatchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [dispatching, setDispatching] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/v1/watches/${params.id}`)
@@ -105,10 +108,10 @@ export default function WatchDetailPage() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  async function handleDelete() {
-    if (!watch || !window.confirm("Tem certeza que deseja excluir este relógio?"))
-      return;
+  async function handleDeleteConfirm() {
+    if (!watch) return;
     setDeleting(true);
+    setConfirmDeleteOpen(false);
     try {
       const res = await fetch(`/api/v1/watches?ids=${watch.id}`, {
         method: "DELETE",
@@ -232,6 +235,15 @@ export default function WatchDetailPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => router.push(`/relogios/${watch.id}/editar`)}
+            className="border-chronos-gold/30 text-chronos-gold hover:bg-chronos-gold/10"
+          >
+            <Pencil className="mr-2 h-3 w-3" />
+            Editar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleDispatch}
             disabled={dispatching}
             className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
@@ -246,7 +258,7 @@ export default function WatchDetailPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleDelete}
+            onClick={() => setConfirmDeleteOpen(true)}
             disabled={deleting}
             className="border-red-500/30 text-red-400 hover:bg-red-500/10"
           >
@@ -457,6 +469,18 @@ export default function WatchDetailPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Excluir relógio"
+        description={`Tem certeza que deseja excluir o ${watch.brand} ${watch.model}? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+      />
     </div>
   );
 }

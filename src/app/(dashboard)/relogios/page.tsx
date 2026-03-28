@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   Watch,
   Plus,
@@ -28,8 +29,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { WATCH_STATUS_LABELS, WATCH_CONDITION_LABELS } from "@/shared/constants";
-import type { WatchStatus, WatchCondition } from "@/shared/constants";
+import { WATCH_STATUS_LABELS } from "@/shared/constants";
+import type { WatchStatus } from "@/shared/constants";
 
 type WatchImage = {
   id: string;
@@ -62,6 +63,7 @@ export default function EstoquePage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [dispatching, setDispatching] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const fetchWatches = useCallback(async () => {
     setLoading(true);
@@ -109,14 +111,14 @@ export default function EstoquePage() {
     }
   }
 
-  async function handleDelete() {
+  function handleDeleteClick() {
     if (selectedIds.size === 0) return;
-    const confirmMsg = selectedIds.size === 1
-      ? "Tem certeza que deseja excluir este relógio?"
-      : `Tem certeza que deseja excluir ${selectedIds.size} relógios?`;
-    if (!window.confirm(confirmMsg)) return;
+    setConfirmDeleteOpen(true);
+  }
 
+  async function handleDeleteConfirm() {
     setDeleting(true);
+    setConfirmDeleteOpen(false);
     try {
       const ids = Array.from(selectedIds).join(",");
       const res = await fetch(`/api/v1/watches?ids=${ids}`, { method: "DELETE" });
@@ -253,7 +255,7 @@ export default function EstoquePage() {
             </Button>
             <Button
               size="sm"
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               disabled={deleting}
               variant="outline"
               className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
@@ -406,6 +408,22 @@ export default function EstoquePage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        title="Excluir relógio(s)"
+        description={
+          selectedIds.size === 1
+            ? "Tem certeza que deseja excluir este relógio? Esta ação não pode ser desfeita."
+            : `Tem certeza que deseja excluir ${selectedIds.size} relógios? Esta ação não pode ser desfeita.`
+        }
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+        loading={deleting}
+      />
     </div>
   );
 }
