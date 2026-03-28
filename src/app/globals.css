@@ -109,3 +109,13 @@
 .recharts-rectangle.recharts-tooltip-cursor {
   fill: rgba(255, 255, 255, 0.03) !important;
 }
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1a1a2e !important;
+  border-color: #2a2a3e !important;
+}
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-label {
+  color: #f0f0f0 !important;
+}
+.recharts-tooltip-wrapper .recharts-default-tooltip .recharts-tooltip-item {
+  color: #D4AF37 !important;
+}

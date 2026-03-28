@@ -211,6 +211,8 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                       color: "#f0f0f0",
                     }}
+                    labelStyle={{ color: "#f0f0f0", fontWeight: 600 }}
+                    itemStyle={{ color: "#D4AF37" }}
                   />
                   <Bar dataKey="count" name="Quantidade" radius={[6, 6, 0, 0]}>
                     {brands.map((_, i) => (
@@ -271,6 +273,8 @@ export default function DashboardPage() {
                       borderRadius: "8px",
                       color: "#f0f0f0",
                     }}
+                    labelStyle={{ color: "#f0f0f0", fontWeight: 600 }}
+                    itemStyle={{ color: "#D4AF37" }}
                   />
                 </PieChart>
               </ResponsiveContainer>
