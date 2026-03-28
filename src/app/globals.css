@@ -100,8 +100,12 @@
   background: transparent !important;
 }
 .recharts-cartesian-grid line {
-  stroke: #2a2a36;
+  stroke: #2a2a36 !important;
 }
-.recharts-cartesian-grid-bg {
+.recharts-cartesian-grid-bg,
+.recharts-cartesian-grid rect {
   fill: transparent !important;
+}
+.recharts-rectangle.recharts-tooltip-cursor {
+  fill: rgba(255, 255, 255, 0.03) !important;
 }

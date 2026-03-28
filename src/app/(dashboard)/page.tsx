@@ -17,12 +17,12 @@ import {
   Bar,
   XAxis,
   YAxis,
+  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  Legend,
 } from "recharts";
 
 type DashboardData = {
@@ -180,7 +180,17 @@ export default function DashboardPage() {
           <CardContent>
             {brands.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={brands} barCategoryGap="30%">
+                <BarChart
+                  data={brands}
+                  barCategoryGap="30%"
+                  style={{ backgroundColor: "transparent" }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#2a2a36"
+                    vertical={false}
+                    fill="transparent"
+                  />
                   <XAxis
                     dataKey="name"
                     tick={{ fill: "#9ca3af", fontSize: 12 }}
@@ -194,7 +204,7 @@ export default function DashboardPage() {
                     allowDecimals={false}
                   />
                   <Tooltip
-                    cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
                     contentStyle={{
                       backgroundColor: "#1a1a2e",
                       border: "1px solid #2a2a3e",
